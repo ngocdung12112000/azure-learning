@@ -50,18 +50,111 @@ These variables only last for the current shell session. If you open a new termi
 az account list-locations --query "[?metadata.regionType=='Physical'].{Name:name, Geo:metadata.geographyGroup, Pair:metadata.pairedRegion[0].name, HasZones:availabilityZoneMappings!=null}" -o table
 ```
 
+| Name | Geo | Pair | HasZones |
+|---|---|---|---|
+| eastus | US | westus | True |
+| westus2 | US | westcentralus | True |
+| australiaeast | Asia Pacific | australiasoutheast | True |
+| southeastasia | Asia Pacific | eastasia | True |
+| northeurope | Europe | westeurope | True |
+| swedencentral | Europe | swedensouth | True |
+| westeurope | Europe | northeurope | True |
+| uksouth | UK | ukwest | True |
+| centralus | US | eastus2 | True |
+| southafricanorth | Africa | southafricawest | True |
+| centralindia | Asia Pacific | southindia | True |
+| eastasia | Asia Pacific | southeastasia | True |
+| indiasouthcentral | Asia Pacific | centralindia | True |
+| indonesiacentral | Asia Pacific |  | True |
+| japaneast | Asia Pacific | japanwest | True |
+| japanwest | Asia Pacific | japaneast | True |
+| koreacentral | Asia Pacific | koreasouth | True |
+| malaysiawest | Asia Pacific |  | True |
+| newzealandnorth | Asia Pacific |  | True |
+| canadacentral | Canada | canadaeast | True |
+| austriaeast | Europe |  | True |
+| belgiumcentral | Europe |  | True |
+| denmarkeast | Europe |  | True |
+| francecentral | Europe | francesouth | True |
+| germanywestcentral | Europe | germanynorth | True |
+| italynorth | Europe |  | True |
+| norwayeast | Europe | norwaywest | True |
+| polandcentral | Europe |  | True |
+| spaincentral | Europe |  | True |
+| switzerlandnorth | Europe | switzerlandwest | True |
+| mexicocentral | Mexico |  | True |
+| uaenorth | Middle East | uaecentral | True |
+| brazilsouth | South America | southcentralus | True |
+| chilecentral | South America |  | True |
+| eastus2euap | US | centraluseuap | True |
+| israelcentral | Middle East |  | True |
+| qatarcentral | Middle East |  | True |
+| eastus2 | US | centralus | True |
+| eastusstg | US | southcentralusstg | False |
+| southcentralus | US | northcentralus | True |
+| westus3 | US | eastus | True |
+| northcentralus | US | southcentralus | False |
+| westus | US | eastus | False |
+| jioindiawest | Asia Pacific | jioindiacentral | False |
+| centraluseuap | US | eastus2euap | False |
+| southcentralusstg | US | eastusstg | False |
+| westcentralus | US | westus2 | False |
+| southafricawest | Africa | southafricanorth | False |
+| australiacentral | Asia Pacific | australiacentral2 | False |
+| australiacentral2 | Asia Pacific | australiacentral | False |
+| australiasoutheast | Asia Pacific | australiaeast | False |
+| jioindiacentral | Asia Pacific | jioindiawest | False |
+| koreasouth | Asia Pacific | koreacentral | False |
+| southindia | Asia Pacific | centralindia | False |
+| westindia | Asia Pacific | southindia | False |
+| canadaeast | Canada | canadacentral | False |
+| francesouth | Europe | francecentral | False |
+| germanynorth | Europe | germanywestcentral | False |
+| norwaywest | Europe | norwayeast | False |
+| switzerlandwest | Europe | switzerlandnorth | False |
+| uaecentral | Middle East | uaenorth | False |
+| brazilsoutheast | South America | brazilsouth | False |
+| ukwest | UK | uksouth | False |
+
 **1.2 Show the regions with no pair:**
 
 ```bash
-az account list-locations --query "[?metadata.regionType=='Physical' && metadata.pairedRegion==null].name" -o tsv
+az account list-locations --query "[?metadata.regionType=='Physical' && metadata.pairedRegion[0].name==null].name" -o tsv
 ```
+
+indonesiacentral <br>
+malaysiawest <br>
+newzealandnorth <br>
+austriaeast <br>
+belgiumcentral <br>
+denmarkeast <br>
+italynorth <br>
+polandcentral <br>
+spaincentral <br>
+mexicocentral <br>
+chilecentral <br>
+israelcentral <br>
+qatarcentral
 
 **1.3 Compare prices between regions.** Open the [Azure Pricing Calculator](https://azure.microsoft.com/pricing/calculator/), add a `D2s_v5` Linux VM, and switch between 3 regions. Note how much the price changes.
 
 **✅ Write down:**
 1. 3 regions with zones and 3 without.
+   - **With zones:** `southeastasia`, `eastasia`, `koreacentral`
+   - **Without zones:** `koreasouth`, `southindia`, `ukwest`
 2. Your chosen region's pair, or "none".
+   - `southeastasia` is paired with `eastasia`.
 3. Which of your 3 regions is cheapest.
+   - **`koreacentral`**, for a `D2s_v5` Linux VM on pay-as-you-go. East Asia costs about 12% more than Korea Central.
+
+   | Region |  Per month, 730 hours (USD) |
+   |---|---|
+   | `koreacentral` | $153.3 |
+   ![alt text](image-2.png)
+   | `southeastasia` | $154.76 |
+   ![alt text](image-1.png)
+   | `eastasia` |  $163.52 |
+   ![alt text](image.png)
 
 ---
 
@@ -83,12 +176,21 @@ az account list-locations --query "[?metadata.regionType=='Physical' && metadata
 ```bash
 az account list-locations --query "[?name=='$LOC'].availabilityZoneMappings[]" -o table
 ```
+| LogicalZone |  PhysicalZone |
+|---|---|
+|1   | southeastasia-az2
+|2   | southeastasia-az3
+|3   | southeastasia-az1
 
 **2.2 Check which zones offer the lab VM size.** Look at the **Zones** and **Restrictions** columns:
 
 ```bash
 az vm list-skus --location $LOC --size Standard_B1s --resource-type virtualMachines -o table
 ```
+
+|ResourceType   |  Locations    |   Name       |    Zones  |  Restrictions |
+|---------------|  -------------| ------------ | -------   | --------------|
+|virtualMachines|  southeastasia|  Standard_B1s|  1,2,3    |    None       |
 
 If Restrictions shows `NotAvailableForSubscription`, try `Standard_B1ms` or `Standard_B2ats_v2`, or change `LOC` to another region.
 
@@ -98,10 +200,17 @@ If Restrictions shows `NotAvailableForSubscription`, try `Standard_B1ms` or `Sta
 az vm list-usage --location $LOC --query "[?contains(name.value,'cores')].{Name:localName, Used:currentValue, Limit:limit}" -o table
 ```
 
+|Name                  | Used   |  Limit
+|--------------------  |------  |-------
+|Total Regional vCPUs  |0       |10
+
 **✅ Write down:**
 1. The physical zone name behind your logical zone 1.
+   - Logical zone 1 is `southeastasia-az2`. Logical zone 2 is `southeastasia-az3`, and logical zone 3 is `southeastasia-az1`.
 2. Which zones support your VM size.
+   - `Standard_B1s` is available in zones 1, 2 and 3 of `southeastasia`, with no restrictions.
 3. Your regional vCPU limit.
+   - 10 vCPUs in `southeastasia`, with 0 in use.
 
 ---
 
@@ -126,6 +235,8 @@ az group create -n $RG -l $LOC
 az network vnet create -g $RG -n vnet-lab --address-prefix 10.0.0.0/16 --subnet-name snet-web --subnet-prefix 10.0.1.0/24
 ```
 
+![alt text](image-3.png)
+
 **3.2 Create a network security group that allows HTTP, and attach it to the subnet:**
 
 ```bash
@@ -139,6 +250,8 @@ az network nsg rule create -g $RG --nsg-name nsg-web -n allow-http --priority 10
 ```bash
 az network vnet subnet update -g $RG --vnet-name vnet-lab -n snet-web --network-security-group nsg-web
 ```
+
+![alt text](image-4.png)
 
 **3.3 Create a zone-redundant public IP and a Standard Load Balancer:**
 
@@ -158,6 +271,8 @@ az network lb probe create -g $RG --lb-name lb-web -n probe-http --protocol Http
 az network lb rule create -g $RG --lb-name lb-web -n rule-http --protocol Tcp --frontend-port 80 --backend-port 80 --frontend-ip-name fe --backend-pool-name be --probe-name probe-http
 ```
 
+![alt text](image-5.png)
+
 **3.4 Create 2 VMs in different zones.** Run this from the `part1` folder so the cloud-init file is found. The VMs get no public IP, so they're reachable only through the load balancer.
 
 ```bash
@@ -167,6 +282,8 @@ cd "/d/LEARN BY MYSELF/Azure/part1"
 ```bash
 for i in 1 2; do az vm create -g $RG -n vm-web-$i --image Ubuntu2204 --size Standard_B1s --zone $i --vnet-name vnet-lab --subnet snet-web --public-ip-address "" --nsg "" --admin-username azureuser --generate-ssh-keys --custom-data cloud-init.yaml; done
 ```
+
+![alt text](image-6.png)
 
 **3.5 Add both VMs to the load balancer's backend pool:**
 
@@ -182,6 +299,8 @@ PIP=$(az network public-ip show -g $RG -n pip-lb --query ipAddress -o tsv); for 
 
 You should see responses from both `vm-web-1 - zone 1` and `vm-web-2 - zone 2`.
 
+![alt text](image-7.png)
+
 **3.7 Simulate a zone failure** by deallocating the VM in zone 1:
 
 ```bash
@@ -194,9 +313,13 @@ for n in {1..8}; do curl -s --max-time 5 http://$PIP; done
 
 Now only zone 2 answers. The health probe noticed the failure and the site stayed up. Start the VM again and confirm that zone 1 comes back into the responses:
 
+![alt text](image-8.png)
+
 ```bash
 az vm start -g $RG -n vm-web-1
 ```
+
+![alt text](image-9.png)
 
 **3.8 Look at it in the portal.** Open **Load balancer → Insights** to see the health probe status for each VM.
 
@@ -225,17 +348,23 @@ If your quota is only 4 vCPUs, you're already using 2 for the zone VMs, so this 
 az vm availability-set create -g $RG -n avset-lab --platform-fault-domain-count 2 --platform-update-domain-count 5
 ```
 
+![alt text](image-10.png)
+
 **4.2 Create 2 VMs in it:**
 
 ```bash
 for i in 1 2; do az vm create -g $RG -n vm-avs-$i --image Ubuntu2204 --size Standard_B1s --availability-set avset-lab --vnet-name vnet-lab --subnet snet-web --public-ip-address "" --nsg "" --admin-username azureuser --generate-ssh-keys; done
 ```
 
+![alt text](image-11.png)
+
 **4.3 See which fault domain and update domain each VM landed in:**
 
 ```bash
 for i in 1 2; do az vm get-instance-view -g $RG -n vm-avs-$i --query "{VM:name, FD:instanceView.platformFaultDomain, UD:instanceView.platformUpdateDomain}" -o table; done
 ```
+
+![alt text](image-12.png)
 
 **4.4 Break it on purpose.** Try to create a VM with both `--zone 1` and `--availability-set avset-lab`, and read the error.
 
