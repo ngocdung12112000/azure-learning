@@ -1,0 +1,25 @@
+#cloud-config
+# Serves a tiny web page on port 80 showing the VM name and its availability zone.
+# Needs no internet access: Python ships with Ubuntu, and the zone comes from the
+# Instance Metadata Service (169.254.169.254), which is reachable from inside the VM.
+write_files:
+  - path: /etc/systemd/system/web.service
+    content: |
+      [Unit]
+      Description=Simple lab web server
+      After=network.target
+
+      [Service]
+      WorkingDirectory=/var/www
+      ExecStart=/usr/bin/python3 -m http.server 80
+      Restart=always
+
+      [Install]
+      WantedBy=multi-user.target
+
+runcmd:
+  - mkdir -p /var/www
+  - ZONE=$(curl -s -H Metadata:true "http://169.254.169.254/metadata/instance/compute/zone?api-version=2021-02-01&format=text")
+  - echo "Hello from $(hostname) - zone ${ZONE:-none}" > /var/www/index.html
+  - systemctl daemon-reload
+  - systemctl enable --now web
