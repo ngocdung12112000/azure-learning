@@ -74,15 +74,21 @@ az group create -n $RG -l $LOC
 az appservice plan create -g $RG -n plan-lab --is-linux --sku B1
 ```
 
+![alt text](image.png)
+
 ```bash
 az webapp create -g $RG -p plan-lab -n $APP --runtime "NODE:22-lts"
 ```
+
+![alt text](image-1.png)
 
 Check that it responds. You should see `HTTP/1.1 200 OK`:
 
 ```bash
 HOST=$(az webapp show -g $RG -n $APP --query defaultHostName -o tsv); curl -sI https://$HOST | head -n 1
 ```
+
+![alt text](image-2.png)
 
 **1.2 Try the features B1 doesn't have.** Both of these should be refused. Read each error:
 
@@ -93,6 +99,8 @@ az webapp deployment slot create -g $RG -n $APP --slot staging
 ```bash
 az monitor autoscale create -g $RG --resource plan-lab --resource-type Microsoft.Web/serverfarms --name as-lab --min-count 1 --max-count 2 --count 1
 ```
+
+![alt text](image-3.png)
 
 **1.3 Scale up to S1 and run the same two commands again.** This time they should work:
 
@@ -108,6 +116,8 @@ az webapp deployment slot create -g $RG -n $APP --slot staging
 az monitor autoscale create -g $RG --resource plan-lab --resource-type Microsoft.Web/serverfarms --name as-lab --min-count 1 --max-count 2 --count 1
 ```
 
+![alt text](image-4.png)
+
 **1.4 Scale up to P1v3.** Delete the autoscale setting first, because it would conflict with the zone redundancy step:
 
 ```bash
@@ -118,7 +128,8 @@ az monitor autoscale delete -g $RG -n as-lab
 az appservice plan update -g $RG -n plan-lab --sku P1V3
 ```
 
-If this fails, the plan's underlying hardware (its **scale unit**) probably can't run P1v3, or your subscription has no quota for it. You can't move a plan to other hardware. To continue, create a new P1V3 plan in a new resource group, or write down the error and go to step 1.6.
+![alt text](image-5.png)
+
 
 **1.5 Check for zone redundancy support, then turn it on.** A result above 1 means it's supported:
 
